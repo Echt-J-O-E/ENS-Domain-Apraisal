@@ -1,4 +1,6 @@
 from flask import Flask, request, render_template
+from flask import jsonify
+from flask_cors import CORS
 import emoji
 from nltk.corpus import words
 import pyphen
@@ -10,11 +12,12 @@ import numpy as np
 nltk.download('words')
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        user_inp = request.form["domain"]
+        user_inp = request.form.get("domain")
         model = joblib.load("ENS_App_model.pkl")
 
         def has_repetition(domain):
@@ -119,7 +122,7 @@ def index():
         print(x_data)
 
         prediction = model.predict(x_data.drop(columns=["Domain"], axis=1))
-        prediction
+
 
         def adjust_value(features, predicted_price):
             # Extract feature values
@@ -170,9 +173,10 @@ def index():
         adjusted_price = adjust_value(domain_features, predicted_listing_price)
         print(f'Adjusted Price: {adjusted_price}')
 
-        appraisal_result = adjusted_price
+        appraisal_result = adjusted_price.tolist()
+        
 
-        return render_template("result.html", appraisal=appraisal_result)
+        return jsonify(appraisal=appraisal_result)
     return render_template("index.html")
 
 if __name__ == "__main__":
